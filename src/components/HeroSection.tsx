@@ -10,10 +10,11 @@ const HeroSection = () => {
       {/* Background with gradient overlay */}
       <div className="absolute inset-0 bg-brand-dark">
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-40"
           style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, hsl(168 84% 32% / 0.3) 0%, transparent 50%),
-                             radial-gradient(circle at 80% 80%, hsl(168 84% 32% / 0.2) 0%, transparent 40%)`,
+            backgroundImage: `radial-gradient(circle at 20% 50%, hsl(270 70% 50% / 0.4) 0%, transparent 50%),
+                             radial-gradient(circle at 80% 80%, hsl(280 80% 60% / 0.3) 0%, transparent 40%),
+                             radial-gradient(circle at 50% 20%, hsl(260 60% 40% / 0.2) 0%, transparent 60%)`,
           }}
         />
         {/* Animated grid pattern */}

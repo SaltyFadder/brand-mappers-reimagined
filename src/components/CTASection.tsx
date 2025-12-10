@@ -7,12 +7,12 @@ const CTASection = () => {
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div
-          className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20"
-          style={{ background: "hsl(168 84% 32%)" }}
+          className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-30"
+          style={{ background: "hsl(270 70% 50%)" }}
         />
         <div
-          className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-15"
-          style={{ background: "hsl(168 84% 32%)" }}
+          className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-25"
+          style={{ background: "hsl(280 80% 60%)" }}
         />
       </div>
 
