@@ -1,50 +1,105 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 
-const categories = ["All", "Events", "Shop Design", "Printing", "Exhibitions"];
+import portfolio1 from "@/assets/portfolio/portfolio-1.jpg";
+import portfolio2 from "@/assets/portfolio/portfolio-2.jpg";
+import portfolio3 from "@/assets/portfolio/portfolio-3.jpg";
+import portfolio4 from "@/assets/portfolio/portfolio-4.jpg";
+import portfolio5 from "@/assets/portfolio/portfolio-5.jpg";
+import portfolio6 from "@/assets/portfolio/portfolio-6.jpg";
+import portfolio7 from "@/assets/portfolio/portfolio-7.jpg";
+import portfolio8 from "@/assets/portfolio/portfolio-8.jpg";
+import portfolio9 from "@/assets/portfolio/portfolio-9.jpg";
+import portfolio10 from "@/assets/portfolio/portfolio-10.jpg";
+import portfolio11 from "@/assets/portfolio/portfolio-11.jpg";
+import portfolio12 from "@/assets/portfolio/portfolio-12.jpg";
+
+const categories = ["All", "Exhibitions", "Printing", "Stands", "Activations"];
 
 const portfolioItems = [
   {
     id: 1,
-    title: "Heritage College Launch Event",
-    category: "Events",
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&h=600&fit=crop",
+    title: "Giza Systems Smart Guide",
+    category: "Exhibitions",
+    image: portfolio1,
     size: "large",
   },
   {
     id: 2,
-    title: "Premium Retail Store Design",
-    category: "Shop Design",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop",
+    title: "Papa Johns Branding",
+    category: "Printing",
+    image: portfolio2,
     size: "small",
   },
   {
     id: 3,
-    title: "Corporate Brand Materials",
+    title: "Glemgas Italy Campaign",
     category: "Printing",
-    image: "https://images.unsplash.com/photo-1562577309-4932fdd64cd1?w=800&h=600&fit=crop",
+    image: portfolio3,
     size: "small",
   },
   {
     id: 4,
-    title: "Tech Expo Exhibition Stand",
-    category: "Exhibitions",
-    image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800&h=600&fit=crop",
+    title: "Fashion Optics Display",
+    category: "Stands",
+    image: portfolio4,
     size: "medium",
   },
   {
     id: 5,
-    title: "Annual Gala Production",
-    category: "Events",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&h=600&fit=crop",
+    title: "Renault Exhibition Stand",
+    category: "Exhibitions",
+    image: portfolio5,
     size: "small",
   },
   {
     id: 6,
-    title: "Luxury Boutique Interior",
-    category: "Shop Design",
-    image: "https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=800&h=600&fit=crop",
+    title: "Heritage College Event",
+    category: "Activations",
+    image: portfolio6,
     size: "medium",
+  },
+  {
+    id: 7,
+    title: "Cisco Partnership Display",
+    category: "Stands",
+    image: portfolio7,
+    size: "small",
+  },
+  {
+    id: 8,
+    title: "Valentine's Campaign",
+    category: "Activations",
+    image: portfolio8,
+    size: "small",
+  },
+  {
+    id: 9,
+    title: "Real Repair Product Launch",
+    category: "Printing",
+    image: portfolio9,
+    size: "medium",
+  },
+  {
+    id: 10,
+    title: "Telefunken Tablet Campaign",
+    category: "Activations",
+    image: portfolio10,
+    size: "small",
+  },
+  {
+    id: 11,
+    title: "Smart Payment Solutions",
+    category: "Exhibitions",
+    image: portfolio11,
+    size: "small",
+  },
+  {
+    id: 12,
+    title: "Rekaz Developments Launch",
+    category: "Activations",
+    image: portfolio12,
+    size: "large",
   },
 ];
 

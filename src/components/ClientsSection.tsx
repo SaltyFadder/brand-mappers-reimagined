@@ -1,12 +1,20 @@
 const clients = [
-  { name: "Heritage College", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=Heritage" },
-  { name: "Tech Corp", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=TechCorp" },
-  { name: "Gulf Industries", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=Gulf+Ind" },
-  { name: "Cairo Events", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=Cairo+Events" },
-  { name: "African Trade", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=African+Trade" },
-  { name: "Premium Retail", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=Premium" },
-  { name: "Global Expo", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=Global+Expo" },
-  { name: "Elite Brands", logo: "https://via.placeholder.com/180x60/f3f4f6/a3a3a3?text=Elite" },
+  { name: "HP" },
+  { name: "Samsung" },
+  { name: "Coca Cola" },
+  { name: "Jotun" },
+  { name: "L'Oreal" },
+  { name: "Orascom" },
+  { name: "ExxonMobil" },
+  { name: "Emirates NBD" },
+  { name: "Banque du Caire" },
+  { name: "Heritage College" },
+  { name: "Papa Johns" },
+  { name: "Renault" },
+  { name: "Glemgas" },
+  { name: "LUNA" },
+  { name: "Vezeeta" },
+  { name: "Molfix" },
 ];
 
 const ClientsSection = () => {
@@ -18,9 +26,12 @@ const ClientsSection = () => {
           <span className="text-primary font-semibold text-sm tracking-wider uppercase mb-4 block">
             Trusted Partners
           </span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
             Brands That <span className="text-gradient">Trust Us</span>
           </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Bond is how we describe our business relationships - a deep connection full of responsibility for quality and impact.
+          </p>
         </div>
 
         {/* Logo Marquee */}
@@ -35,14 +46,12 @@ const ClientsSection = () => {
             {clients.map((client, index) => (
               <div
                 key={`first-${index}`}
-                className="flex-shrink-0 mx-8 md:mx-12 group"
+                className="flex-shrink-0 mx-6 md:mx-8 group"
               >
-                <div className="w-36 h-16 md:w-44 md:h-20 bg-background rounded-xl flex items-center justify-center p-4 border border-border transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-medium">
-                  <img
-                    src={client.logo}
-                    alt={client.name}
-                    className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
-                  />
+                <div className="w-32 h-14 md:w-40 md:h-16 bg-background rounded-xl flex items-center justify-center px-4 border border-border transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-medium">
+                  <span className="text-muted-foreground font-semibold text-sm md:text-base group-hover:text-primary transition-colors whitespace-nowrap">
+                    {client.name}
+                  </span>
                 </div>
               </div>
             ))}
@@ -50,14 +59,12 @@ const ClientsSection = () => {
             {clients.map((client, index) => (
               <div
                 key={`second-${index}`}
-                className="flex-shrink-0 mx-8 md:mx-12 group"
+                className="flex-shrink-0 mx-6 md:mx-8 group"
               >
-                <div className="w-36 h-16 md:w-44 md:h-20 bg-background rounded-xl flex items-center justify-center p-4 border border-border transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-medium">
-                  <img
-                    src={client.logo}
-                    alt={client.name}
-                    className="max-w-full max-h-full object-contain grayscale group-hover:grayscale-0 transition-all duration-300"
-                  />
+                <div className="w-32 h-14 md:w-40 md:h-16 bg-background rounded-xl flex items-center justify-center px-4 border border-border transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-medium">
+                  <span className="text-muted-foreground font-semibold text-sm md:text-base group-hover:text-primary transition-colors whitespace-nowrap">
+                    {client.name}
+                  </span>
                 </div>
               </div>
             ))}
