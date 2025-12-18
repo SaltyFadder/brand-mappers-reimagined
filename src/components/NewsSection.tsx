@@ -1,4 +1,7 @@
 import { ArrowRight, Calendar } from "lucide-react";
+import portfolio1 from "@/assets/portfolio/portfolio-1.jpg";
+import portfolio2 from "@/assets/portfolio/portfolio-2.jpg";
+import portfolio3 from "@/assets/portfolio/portfolio-3.jpg";
 
 const newsItems = [
   {
@@ -7,7 +10,7 @@ const newsItems = [
     excerpt:
       "Brand Mappers secures major partnership to design and produce college events for the upcoming academic year.",
     date: "December 5, 2024",
-    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop",
+    image: portfolio1,
     category: "Partnership",
   },
   {
@@ -16,7 +19,7 @@ const newsItems = [
     excerpt:
       "Opening new offices in Dubai and Riyadh to better serve our growing client base in the Middle East.",
     date: "November 28, 2024",
-    image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=600&fit=crop",
+    image: portfolio2,
     category: "Expansion",
   },
   {
@@ -25,7 +28,7 @@ const newsItems = [
     excerpt:
       "Our innovative booth design wins Best Exhibition Stand at the annual Cairo International Trade Show.",
     date: "November 15, 2024",
-    image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800&h=600&fit=crop",
+    image: portfolio3,
     category: "Awards",
   },
 ];
