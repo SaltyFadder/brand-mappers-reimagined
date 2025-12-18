@@ -1,5 +1,5 @@
 import { ArrowRight, Calendar } from "lucide-react";
-import portfolio1 from "@/assets/portfolio/portfolio-1.jpg";
+import heritageCollege from "@/assets/heritage-college.jpg";
 import portfolio2 from "@/assets/portfolio/portfolio-2.jpg";
 import portfolio3 from "@/assets/portfolio/portfolio-3.jpg";
 
@@ -10,7 +10,7 @@ const newsItems = [
     excerpt:
       "Brand Mappers secures major partnership to design and produce college events for the upcoming academic year.",
     date: "December 5, 2024",
-    image: portfolio1,
+    image: heritageCollege,
     category: "Partnership",
   },
   {
