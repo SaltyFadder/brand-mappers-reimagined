@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 const navLinks = [
-  { name: "Home", href: "#home" },
-  { name: "About", href: "#about" },
-  { name: "Services", href: "#services" },
-  { name: "Portfolio", href: "#portfolio" },
-  { name: "News", href: "#news" },
-  { name: "Contact", href: "#contact" },
+  { name: "Home", href: "/#home" },
+  { name: "About", href: "/#about" },
+  { name: "Services", href: "/#services" },
+  { name: "Portfolio", href: "/#portfolio" },
+  { name: "News", href: "/#news" },
+  { name: "Careers", href: "/careers" },
+  { name: "Contact", href: "/#contact" },
 ];
 
 const Navigation = () => {
@@ -33,22 +36,30 @@ const Navigation = () => {
     >
       <nav className="section-padding flex items-center justify-between max-w-[1800px] mx-auto">
         {/* Logo */}
-        <a href="#home" className="relative z-50">
-          <span className="font-display text-2xl font-bold tracking-tight">
-            Brand<span className="text-primary">Mappers</span>
-          </span>
-        </a>
+        <Link to="/" className="relative z-50">
+          <img src={logo} alt="Brand Mappers" className="h-10 w-auto" />
+        </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-10">
           {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 link-underline"
-            >
-              {link.name}
-            </a>
+            link.href.startsWith('/') && !link.href.includes('#') ? (
+              <Link
+                key={link.name}
+                to={link.href}
+                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 link-underline"
+              >
+                {link.name}
+              </Link>
+            ) : (
+              <a
+                key={link.name}
+                href={link.href}
+                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors duration-300 link-underline"
+              >
+                {link.name}
+              </a>
+            )
           ))}
         </div>
 
@@ -78,15 +89,27 @@ const Navigation = () => {
         >
           <div className="flex flex-col items-center justify-center h-full gap-8">
             {navLinks.map((link, index) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-3xl font-display font-bold text-foreground hover:text-primary transition-colors"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {link.name}
-              </a>
+              link.href.startsWith('/') && !link.href.includes('#') ? (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-3xl font-display font-bold text-foreground hover:text-primary transition-colors"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {link.name}
+                </Link>
+              ) : (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-3xl font-display font-bold text-foreground hover:text-primary transition-colors"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {link.name}
+                </a>
+              )
             ))}
             <Button
               className="btn-primary mt-8"
