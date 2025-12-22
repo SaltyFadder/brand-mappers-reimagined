@@ -1,32 +1,47 @@
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 
 const HeroSection = () => {
+  const vantaRef = useRef<HTMLDivElement>(null);
+  const [vantaEffect, setVantaEffect] = useState<any>(null);
+
+  useEffect(() => {
+    if (!vantaEffect && vantaRef.current) {
+      import("vanta/dist/vanta.net.min").then((VANTA) => {
+        setVantaEffect(
+          VANTA.default({
+            el: vantaRef.current,
+            THREE: THREE,
+            mouseControls: true,
+            touchControls: true,
+            gyroControls: false,
+            minHeight: 200.0,
+            minWidth: 200.0,
+            scale: 1.0,
+            scaleMobile: 1.0,
+            color: 0x7c3aed,
+            backgroundColor: 0x0a0a0f,
+            points: 10.0,
+            maxDistance: 20.0,
+            spacing: 16.0,
+          })
+        );
+      });
+    }
+    return () => {
+      if (vantaEffect) vantaEffect.destroy();
+    };
+  }, [vantaEffect]);
+
   return (
     <section
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Background with gradient overlay */}
-      <div className="absolute inset-0 bg-brand-dark">
-        <div
-          className="absolute inset-0 opacity-40"
-          style={{
-            backgroundImage: `radial-gradient(circle at 20% 50%, hsl(270 70% 50% / 0.4) 0%, transparent 50%),
-                             radial-gradient(circle at 80% 80%, hsl(280 80% 60% / 0.3) 0%, transparent 40%),
-                             radial-gradient(circle at 50% 20%, hsl(260 60% 40% / 0.2) 0%, transparent 60%)`,
-          }}
-        />
-        {/* Animated grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px),
-                             linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-            backgroundSize: "60px 60px",
-          }}
-        />
-      </div>
+      {/* Vanta.js animated background */}
+      <div ref={vantaRef} className="absolute inset-0" />
 
       {/* Content */}
       <div className="relative z-10 section-padding text-center max-w-6xl mx-auto">
