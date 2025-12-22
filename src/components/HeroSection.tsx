@@ -82,7 +82,7 @@ const HeroSection = () => {
         {/* Stats Preview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 animate-fade-up opacity-0 animation-delay-400">
           {[
-            { value: "500+", label: "Projects Delivered" },
+            { value: "5000+", label: "Projects Delivered" },
             { value: "8+", label: "Years Experience" },
             { value: "15+", label: "Countries Served" },
             { value: "50+", label: "Team Members" },
