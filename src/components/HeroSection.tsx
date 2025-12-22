@@ -21,7 +21,7 @@ const HeroSection = () => {
             minWidth: 200.0,
             scale: 1.0,
             scaleMobile: 1.0,
-            color: 0x7c3aed,
+            color: 0x8e2881,
             backgroundColor: 0x0a0a0f,
             points: 10.0,
             maxDistance: 20.0,
