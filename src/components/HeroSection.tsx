@@ -1,47 +1,27 @@
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import heroVideo from "@/assets/hero-video.mp4";
 
 const HeroSection = () => {
-  const vantaRef = useRef<HTMLDivElement>(null);
-  const [vantaEffect, setVantaEffect] = useState<any>(null);
-
-  useEffect(() => {
-    if (!vantaEffect && vantaRef.current) {
-      import("vanta/dist/vanta.net.min").then((VANTA) => {
-        setVantaEffect(
-          VANTA.default({
-            el: vantaRef.current,
-            THREE: THREE,
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.0,
-            minWidth: 200.0,
-            scale: 1.0,
-            scaleMobile: 1.0,
-            color: 0x8e2881,
-            backgroundColor: 0x0a0a0f,
-            points: 10.0,
-            maxDistance: 20.0,
-            spacing: 16.0,
-          })
-        );
-      });
-    }
-    return () => {
-      if (vantaEffect) vantaEffect.destroy();
-    };
-  }, [vantaEffect]);
-
   return (
     <section
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Vanta.js animated background */}
-      <div ref={vantaRef} className="absolute inset-0" />
+      {/* Video background */}
+      <div className="absolute inset-0 bg-background">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-background/60" />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 section-padding text-center max-w-6xl mx-auto">
