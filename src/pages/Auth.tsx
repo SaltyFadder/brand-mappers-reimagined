@@ -13,12 +13,13 @@ const authSchema = z.object({
 });
 
 const Auth = () => {
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   
-  const { signIn, user } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -54,21 +55,46 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(email, password);
-      if (error) {
-        toast({
-          title: "Login failed",
-          description: error.message === "Invalid login credentials" 
-            ? "Invalid email or password" 
-            : error.message,
-          variant: "destructive"
-        });
+      if (isLogin) {
+        const { error } = await signIn(email, password);
+        if (error) {
+          toast({
+            title: "Login failed",
+            description: error.message === "Invalid login credentials" 
+              ? "Invalid email or password" 
+              : error.message,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully logged in."
+          });
+          navigate("/admin");
+        }
       } else {
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in."
-        });
-        navigate("/admin");
+        const { error } = await signUp(email, password);
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({
+              title: "Account exists",
+              description: "This email is already registered. Please log in instead.",
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "Sign up failed",
+              description: error.message,
+              variant: "destructive"
+            });
+          }
+        } else {
+          toast({
+            title: "Account created!",
+            description: "You can now log in with your credentials."
+          });
+          setIsLogin(true);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -81,10 +107,12 @@ const Auth = () => {
         <div className="bg-card border border-border rounded-2xl p-8 shadow-lg">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Admin Login
+              {isLogin ? "Admin Login" : "Create Account"}
             </h1>
             <p className="text-muted-foreground">
-              Sign in to access the admin dashboard
+              {isLogin 
+                ? "Sign in to access the admin dashboard" 
+                : "Register for an admin account"}
             </p>
           </div>
 
@@ -126,9 +154,24 @@ const Auth = () => {
               className="w-full btn-primary"
               disabled={isLoading}
             >
-              {isLoading ? "Loading..." : "Sign In"}
+              {isLoading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
             </Button>
           </form>
+
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setErrors({});
+              }}
+              className="text-sm text-primary hover:underline"
+            >
+              {isLogin 
+                ? "Don't have an account? Sign up" 
+                : "Already have an account? Sign in"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 text-center">
