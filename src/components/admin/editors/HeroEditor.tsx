@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,24 +12,34 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface HeroStat {
   value: string;
   label: string;
 }
 
+interface HeroContent {
+  badge: string;
+  headline: string;
+  tagline: string;
+  ctaText: string;
+  ctaSecondaryText: string;
+}
+
 export const HeroEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Hero content state
-  const [badge, setBadge] = useState("BTL Advertising Excellence Since 2016");
-  const [headline, setHeadline] = useState("GROW BIGGER.\nEVERYDAY.");
-  const [tagline, setTagline] = useState(
-    "Your One-Stop BTL Advertising Partner. Transforming brands through exceptional events, exhibitions, and creative design solutions."
-  );
-  const [primaryCta, setPrimaryCta] = useState("Start Your Project");
-  const [secondaryCta, setSecondaryCta] = useState("View Our Work");
+  const [content, setContent] = useState<HeroContent>({
+    badge: "BTL Advertising Excellence Since 2016",
+    headline: "GROW BIGGER.\nEVERYDAY.",
+    tagline: "Your One-Stop BTL Advertising Partner. Transforming brands through exceptional events, exhibitions, and creative design solutions.",
+    ctaText: "Start Your Project",
+    ctaSecondaryText: "View Our Work",
+  });
 
   // Stats state
   const [stats, setStats] = useState<HeroStat[]>([
@@ -39,15 +49,79 @@ export const HeroEditor = () => {
     { value: "50+", label: "Team Members" },
   ]);
 
+  // Fetch existing data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .in("key", ["hero_content", "hero_stats"]);
+
+        if (error) throw error;
+
+        if (data) {
+          data.forEach((item) => {
+            if (item.key === "hero_content" && item.value) {
+              setContent(item.value as unknown as HeroContent);
+            }
+            if (item.key === "hero_stats" && item.value) {
+              setStats(item.value as unknown as HeroStat[]);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching hero data:", err);
+        toast({
+          title: "Error loading data",
+          description: "Could not load hero section data.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [toast]);
+
   const handleSave = async () => {
     setSaving(true);
-    // Simulate save
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "Hero section saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      // Update hero_content
+      const { error: contentError } = await supabase
+        .from("site_settings")
+        .update({ value: JSON.parse(JSON.stringify(content)), updated_at: new Date().toISOString() })
+        .eq("key", "hero_content");
+
+      if (contentError) throw contentError;
+
+      // Update hero_stats
+      const { error: statsError } = await supabase
+        .from("site_settings")
+        .update({ value: JSON.parse(JSON.stringify(stats)), updated_at: new Date().toISOString() })
+        .eq("key", "hero_stats");
+
+      if (statsError) throw statsError;
+
+      toast({
+        title: "Hero section saved",
+        description: "Your changes have been published.",
+      });
+    } catch (err) {
+      console.error("Error saving hero data:", err);
+      toast({
+        title: "Error saving",
+        description: "Could not save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateContent = (field: keyof HeroContent, value: string) => {
+    setContent(prev => ({ ...prev, [field]: value }));
   };
 
   const updateStat = (index: number, field: keyof HeroStat, value: string) => {
@@ -63,6 +137,14 @@ export const HeroEditor = () => {
   const removeStat = (index: number) => {
     setStats(stats.filter((_, i) => i !== index));
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -98,8 +180,8 @@ export const HeroEditor = () => {
             <Label htmlFor="badge">Badge Text</Label>
             <Input
               id="badge"
-              value={badge}
-              onChange={(e) => setBadge(e.target.value)}
+              value={content.badge}
+              onChange={(e) => updateContent("badge", e.target.value)}
               placeholder="Badge text shown above headline"
             />
           </div>
@@ -108,8 +190,8 @@ export const HeroEditor = () => {
             <Label htmlFor="headline">Headline</Label>
             <Textarea
               id="headline"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
+              value={content.headline}
+              onChange={(e) => updateContent("headline", e.target.value)}
               placeholder="Main headline"
               rows={2}
             />
@@ -119,8 +201,8 @@ export const HeroEditor = () => {
             <Label htmlFor="tagline">Tagline</Label>
             <Textarea
               id="tagline"
-              value={tagline}
-              onChange={(e) => setTagline(e.target.value)}
+              value={content.tagline}
+              onChange={(e) => updateContent("tagline", e.target.value)}
               placeholder="Descriptive tagline"
               rows={3}
             />
@@ -131,16 +213,16 @@ export const HeroEditor = () => {
               <Label htmlFor="primaryCta">Primary Button</Label>
               <Input
                 id="primaryCta"
-                value={primaryCta}
-                onChange={(e) => setPrimaryCta(e.target.value)}
+                value={content.ctaText}
+                onChange={(e) => updateContent("ctaText", e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="secondaryCta">Secondary Button</Label>
               <Input
                 id="secondaryCta"
-                value={secondaryCta}
-                onChange={(e) => setSecondaryCta(e.target.value)}
+                value={content.ctaSecondaryText}
+                onChange={(e) => updateContent("ctaSecondaryText", e.target.value)}
               />
             </div>
           </div>
