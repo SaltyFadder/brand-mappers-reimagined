@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ContactFormModal from "./ContactFormModal";
 
 const CTASection = () => {
+  const [contactOpen, setContactOpen] = useState(false);
+
   return (
+    <>
     <section id="contact" className="py-24 md:py-32 section-padding bg-brand-dark relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0">
@@ -40,13 +45,14 @@ const CTASection = () => {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-          <Button className="btn-primary min-w-[220px] group">
+          <Button className="btn-primary min-w-[220px] group" onClick={() => setContactOpen(true)}>
             Start Your Project
             <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
           <Button
             variant="outline"
             className="min-w-[220px] border-brand-light/20 text-brand-light hover:bg-brand-light/10 hover:border-brand-light/40 rounded-full px-8 py-6"
+            onClick={() => setContactOpen(true)}
           >
             Request Quote
           </Button>
@@ -70,6 +76,9 @@ const CTASection = () => {
         </div>
       </div>
     </section>
+
+    <ContactFormModal open={contactOpen} onOpenChange={setContactOpen} />
+    </>
   );
 };
 

@@ -1,8 +1,20 @@
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ContactFormModal from "./ContactFormModal";
 
 const HeroSection = () => {
+  const [contactOpen, setContactOpen] = useState(false);
+
+  const scrollToPortfolio = () => {
+    const portfolioSection = document.getElementById("portfolio");
+    if (portfolioSection) {
+      portfolioSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
+    <>
     <section
       id="home"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
@@ -47,12 +59,13 @@ const HeroSection = () => {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up opacity-0 animation-delay-300">
-          <Button className="btn-primary min-w-[200px]">
+          <Button className="btn-primary min-w-[200px]" onClick={() => setContactOpen(true)}>
             Start Your Project
           </Button>
           <Button
             variant="outline"
             className="min-w-[200px] border-brand-light/20 text-brand-light hover:bg-brand-light/10 hover:border-brand-light/40 rounded-full px-8 py-6"
+            onClick={scrollToPortfolio}
           >
             View Our Work
           </Button>
@@ -84,6 +97,9 @@ const HeroSection = () => {
         <ChevronDown className="w-8 h-8 animate-scroll-indicator" />
       </a>
     </section>
+
+    <ContactFormModal open={contactOpen} onOpenChange={setContactOpen} />
+    </>
   );
 };
 
