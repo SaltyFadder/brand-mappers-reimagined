@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ImageUpload } from "../ImageUpload";
 
 interface PortfolioItem {
   id: string;
@@ -29,25 +31,66 @@ interface PortfolioItem {
 
 const categories = ["All", "Exhibitions", "Printing", "Stands", "Activations"];
 
+const defaultItems: PortfolioItem[] = [
+  { id: "1", title: "Tech Conference 2024", category: "Exhibitions", image: "", size: "large" },
+  { id: "2", title: "Product Launch Event", category: "Activations", image: "", size: "medium" },
+  { id: "3", title: "Corporate Branding", category: "Printing", image: "", size: "small" },
+  { id: "4", title: "Trade Show Booth", category: "Stands", image: "", size: "medium" },
+];
+
 export const PortfolioEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<PortfolioItem[]>(defaultItems);
 
-  const [items, setItems] = useState<PortfolioItem[]>([
-    { id: "1", title: "Tech Conference 2024", category: "Exhibitions", image: "/portfolio-1.jpg", size: "large" },
-    { id: "2", title: "Product Launch Event", category: "Activations", image: "/portfolio-2.jpg", size: "medium" },
-    { id: "3", title: "Corporate Branding", category: "Printing", image: "/portfolio-3.jpg", size: "small" },
-    { id: "4", title: "Trade Show Booth", category: "Stands", image: "/portfolio-4.jpg", size: "medium" },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .eq("key", "portfolio_items")
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        if (data?.value) {
+          setItems(data.value as unknown as PortfolioItem[]);
+        }
+      } catch (err) {
+        console.error("Error fetching portfolio data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "Portfolio saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key: "portfolio_items", value: JSON.parse(JSON.stringify(items)) }, { onConflict: "key" });
+
+      if (error) throw error;
+
+      toast({
+        title: "Portfolio saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addItem = () => {
@@ -64,6 +107,14 @@ export const PortfolioEditor = () => {
   const removeItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id));
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -106,17 +157,12 @@ export const PortfolioEditor = () => {
                 key={item.id}
                 className="flex items-start gap-4 p-4 border border-border rounded-lg"
               >
-                <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  )}
-                </div>
+                <ImageUpload
+                  currentImage={item.image}
+                  onImageUploaded={(url) => updateItem(item.id, "image", url)}
+                  folder="portfolio"
+                  className="w-24 h-24 flex-shrink-0"
+                />
                 <div className="flex-1 space-y-3">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
@@ -160,14 +206,6 @@ export const PortfolioEditor = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Image URL</Label>
-                    <Input
-                      value={item.image}
-                      onChange={(e) => updateItem(item.id, "image", e.target.value)}
-                      placeholder="/portfolio-image.jpg"
-                    />
                   </div>
                 </div>
                 <Button

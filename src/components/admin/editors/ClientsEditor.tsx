@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ImageUpload } from "../ImageUpload";
 
 interface Client {
   id: string;
@@ -18,30 +20,94 @@ interface Client {
   logo: string;
 }
 
+interface ClientsContent {
+  title: string;
+  subtitle: string;
+  description: string;
+}
+
+const defaultContent: ClientsContent = {
+  title: "Trusted Partners",
+  subtitle: "Brands That Trust Us",
+  description: "Bond is how we describe our business relationships - a deep connection full of responsibility for quality and impact.",
+};
+
+const defaultClients: Client[] = [
+  { id: "1", name: "HP", logo: "" },
+  { id: "2", name: "Samsung", logo: "" },
+  { id: "3", name: "Coca Cola", logo: "" },
+  { id: "4", name: "Jotun", logo: "" },
+  { id: "5", name: "L'Oreal", logo: "" },
+  { id: "6", name: "Orascom", logo: "" },
+];
+
 export const ClientsEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState<ClientsContent>(defaultContent);
+  const [clients, setClients] = useState<Client[]>(defaultClients);
 
-  const [sectionTitle, setSectionTitle] = useState("Trusted Partners");
-  const [sectionSubtitle, setSectionSubtitle] = useState("Brands That Trust Us");
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .in("key", ["clients_content", "clients_list"]);
 
-  const [clients, setClients] = useState<Client[]>([
-    { id: "1", name: "Company One", logo: "" },
-    { id: "2", name: "Company Two", logo: "" },
-    { id: "3", name: "Company Three", logo: "" },
-    { id: "4", name: "Company Four", logo: "" },
-    { id: "5", name: "Company Five", logo: "" },
-    { id: "6", name: "Company Six", logo: "" },
-  ]);
+        if (error) throw error;
+
+        if (data) {
+          data.forEach((item) => {
+            if (item.key === "clients_content" && item.value) {
+              setContent(item.value as unknown as ClientsContent);
+            }
+            if (item.key === "clients_list" && item.value) {
+              setClients(item.value as unknown as Client[]);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching clients data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "Clients saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const contentUpdate = supabase
+        .from("site_settings")
+        .upsert({ key: "clients_content", value: JSON.parse(JSON.stringify(content)) }, { onConflict: "key" });
+
+      const clientsUpdate = supabase
+        .from("site_settings")
+        .upsert({ key: "clients_list", value: JSON.parse(JSON.stringify(clients)) }, { onConflict: "key" });
+
+      const [contentRes, clientsRes] = await Promise.all([contentUpdate, clientsUpdate]);
+
+      if (contentRes.error) throw contentRes.error;
+      if (clientsRes.error) throw clientsRes.error;
+
+      toast({
+        title: "Clients saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addClient = () => {
@@ -55,6 +121,14 @@ export const ClientsEditor = () => {
   const removeClient = (id: string) => {
     setClients(clients.filter((c) => c.id !== id));
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -86,12 +160,16 @@ export const ClientsEditor = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Title</Label>
-              <Input value={sectionTitle} onChange={(e) => setSectionTitle(e.target.value)} />
+              <Input value={content.title} onChange={(e) => setContent({ ...content, title: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Subtitle</Label>
-              <Input value={sectionSubtitle} onChange={(e) => setSectionSubtitle(e.target.value)} />
+              <Input value={content.subtitle} onChange={(e) => setContent({ ...content, subtitle: e.target.value })} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Input value={content.description} onChange={(e) => setContent({ ...content, description: e.target.value })} />
           </div>
         </CardContent>
       </Card>
@@ -116,9 +194,12 @@ export const ClientsEditor = () => {
                 key={client.id}
                 className="flex items-center gap-3 p-4 border border-border rounded-lg"
               >
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0 text-xs text-muted-foreground">
-                  Logo
-                </div>
+                <ImageUpload
+                  currentImage={client.logo}
+                  onImageUploaded={(url) => updateClient(client.id, "logo", url)}
+                  folder="clients"
+                  className="w-16 h-16 flex-shrink-0"
+                />
                 <div className="flex-1 space-y-2">
                   <div className="space-y-1">
                     <Label className="text-xs">Name</Label>

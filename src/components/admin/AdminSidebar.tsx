@@ -14,6 +14,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Navigation", path: "/admin/navigation", icon: Navigation },
   { title: "Footer", path: "/admin/footer", icon: Phone },
   { title: "Colors & Theme", path: "/admin/theme", icon: Palette },
+  { title: "SEO Settings", path: "/admin/seo", icon: Search },
 ];
 
 export const AdminSidebar = () => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AboutStat {
   icon: string;
@@ -20,31 +21,94 @@ interface AboutStat {
   label: string;
 }
 
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  description: string;
+  secondaryDescription: string;
+}
+
+const defaultContent: AboutContent = {
+  title: "About Us",
+  subtitle: "Crafting Brand Experiences",
+  description: "Since 2016, Brand Mappers has been at the forefront of BTL advertising, transforming how brands connect with their audiences. We specialize in creating immersive experiences that leave lasting impressions.",
+  secondaryDescription: "From Egypt to the Gulf, across Africa to the Americas and Canada, we've helped brands grow bigger every day through exceptional events, stunning exhibitions, and innovative design solutions.",
+};
+
+const defaultStats: AboutStat[] = [
+  { icon: "Briefcase", value: 5000, suffix: "+", label: "Projects Completed" },
+  { icon: "Award", value: 8, suffix: "+", label: "Years in Business" },
+  { icon: "Globe", value: 15, suffix: "+", label: "Countries Served" },
+  { icon: "Users", value: 50, suffix: "+", label: "Team Members" },
+];
+
 export const AboutEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState<AboutContent>(defaultContent);
+  const [stats, setStats] = useState<AboutStat[]>(defaultStats);
 
-  const [title, setTitle] = useState("About Us");
-  const [subtitle, setSubtitle] = useState("Who We Are");
-  const [description, setDescription] = useState(
-    "Brand Mappers is a leading BTL advertising agency dedicated to transforming brands through innovative experiential marketing, exhibitions, and creative design solutions."
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .in("key", ["about_content", "about_stats"]);
 
-  const [stats, setStats] = useState<AboutStat[]>([
-    { icon: "Target", value: 5000, suffix: "+", label: "Projects Completed" },
-    { icon: "Users", value: 150, suffix: "+", label: "Team Members" },
-    { icon: "Globe", value: 25, suffix: "+", label: "Countries Served" },
-    { icon: "Award", value: 99, suffix: "%", label: "Client Satisfaction" },
-  ]);
+        if (error) throw error;
+
+        if (data) {
+          data.forEach((item) => {
+            if (item.key === "about_content" && item.value) {
+              setContent(item.value as unknown as AboutContent);
+            }
+            if (item.key === "about_stats" && item.value) {
+              setStats(item.value as unknown as AboutStat[]);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching about data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "About section saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const contentUpdate = supabase
+        .from("site_settings")
+        .upsert({ key: "about_content", value: JSON.parse(JSON.stringify(content)) }, { onConflict: "key" });
+
+      const statsUpdate = supabase
+        .from("site_settings")
+        .upsert({ key: "about_stats", value: JSON.parse(JSON.stringify(stats)) }, { onConflict: "key" });
+
+      const [contentRes, statsRes] = await Promise.all([contentUpdate, statsUpdate]);
+
+      if (contentRes.error) throw contentRes.error;
+      if (statsRes.error) throw statsRes.error;
+
+      toast({
+        title: "About section saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const updateStat = (index: number, field: keyof AboutStat, value: string | number) => {
@@ -52,6 +116,14 @@ export const AboutEditor = () => {
     updated[index] = { ...updated[index], [field]: value };
     setStats(updated);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -85,26 +157,35 @@ export const AboutEditor = () => {
               <Label htmlFor="title">Section Title</Label>
               <Input
                 id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={content.title}
+                onChange={(e) => setContent({ ...content, title: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="subtitle">Subtitle</Label>
               <Input
                 id="subtitle"
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
+                value={content.subtitle}
+                onChange={(e) => setContent({ ...content, subtitle: e.target.value })}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Primary Description</Label>
             <Textarea
               id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
+              value={content.description}
+              onChange={(e) => setContent({ ...content, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="secondaryDescription">Secondary Description</Label>
+            <Textarea
+              id="secondaryDescription"
+              value={content.secondaryDescription}
+              onChange={(e) => setContent({ ...content, secondaryDescription: e.target.value })}
+              rows={3}
             />
           </div>
         </CardContent>
