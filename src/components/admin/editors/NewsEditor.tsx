@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Image as ImageIcon } from "lucide-react";
+import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ImageUpload } from "../ImageUpload";
 
 interface NewsItem {
   id: string;
@@ -22,37 +24,78 @@ interface NewsItem {
   image: string;
 }
 
+const defaultItems: NewsItem[] = [
+  {
+    id: "1",
+    title: "Brand Mappers Wins Best Exhibition Award",
+    excerpt: "We're proud to announce our latest achievement in the industry...",
+    date: "2024-01-15",
+    category: "Awards",
+    image: "",
+  },
+  {
+    id: "2",
+    title: "New Office Opening in Dubai",
+    excerpt: "Expanding our presence in the Middle East region...",
+    date: "2024-01-10",
+    category: "Company News",
+    image: "",
+  },
+];
+
 export const NewsEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<NewsItem[]>(defaultItems);
 
-  const [items, setItems] = useState<NewsItem[]>([
-    {
-      id: "1",
-      title: "Brand Mappers Wins Best Exhibition Award",
-      excerpt: "We're proud to announce our latest achievement in the industry...",
-      date: "2024-01-15",
-      category: "Awards",
-      image: "",
-    },
-    {
-      id: "2",
-      title: "New Office Opening in Dubai",
-      excerpt: "Expanding our presence in the Middle East region...",
-      date: "2024-01-10",
-      category: "Company News",
-      image: "",
-    },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .eq("key", "news_items")
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        if (data?.value) {
+          setItems(data.value as unknown as NewsItem[]);
+        }
+      } catch (err) {
+        console.error("Error fetching news data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "News saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key: "news_items", value: JSON.parse(JSON.stringify(items)) }, { onConflict: "key" });
+
+      if (error) throw error;
+
+      toast({
+        title: "News saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addItem = () => {
@@ -76,6 +119,14 @@ export const NewsEditor = () => {
   const removeItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id));
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -118,17 +169,12 @@ export const NewsEditor = () => {
                 key={item.id}
                 className="flex items-start gap-4 p-4 border border-border rounded-lg"
               >
-                <div className="w-32 h-24 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  )}
-                </div>
+                <ImageUpload
+                  currentImage={item.image}
+                  onImageUploaded={(url) => updateItem(item.id, "image", url)}
+                  folder="news"
+                  className="w-32 h-24 flex-shrink-0"
+                />
                 <div className="flex-1 space-y-3">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2 space-y-1">
@@ -155,21 +201,12 @@ export const NewsEditor = () => {
                       rows={2}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Category</Label>
-                      <Input
-                        value={item.category}
-                        onChange={(e) => updateItem(item.id, "category", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Image URL</Label>
-                      <Input
-                        value={item.image}
-                        onChange={(e) => updateItem(item.id, "image", e.target.value)}
-                      />
-                    </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Category</Label>
+                    <Input
+                      value={item.category}
+                      onChange={(e) => updateItem(item.id, "category", e.target.value)}
+                    />
                   </div>
                 </div>
                 <Button

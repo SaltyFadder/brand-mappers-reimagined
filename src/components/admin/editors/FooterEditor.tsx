@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SocialLink {
   id: string;
@@ -26,65 +27,145 @@ interface FooterLink {
   href: string;
 }
 
+interface ContactInfo {
+  phone: string;
+  email: string;
+  address: string;
+}
+
+interface FooterContent {
+  companyDescription: string;
+  contact: ContactInfo;
+  quickLinks: FooterLink[];
+  socialLinks: SocialLink[];
+}
+
+const defaultContent: FooterContent = {
+  companyDescription: "Your one-stop BTL advertising partner since 2016. Creating impactful brand experiences across Egypt, Gulf, Africa, and the Americas.",
+  contact: {
+    phone: "+20 100 332 3458",
+    email: "info@brand-mappers.com",
+    address: "Cairo, Egypt\nDubai, UAE",
+  },
+  quickLinks: [
+    { id: "1", name: "About Us", href: "#about" },
+    { id: "2", name: "Services", href: "#services" },
+    { id: "3", name: "Portfolio", href: "#portfolio" },
+    { id: "4", name: "News", href: "#news" },
+    { id: "5", name: "Contact", href: "#contact" },
+  ],
+  socialLinks: [
+    { id: "1", platform: "LinkedIn", url: "https://linkedin.com/company/brand-mappers", icon: "Linkedin" },
+    { id: "2", platform: "Instagram", url: "https://instagram.com/brandmappers", icon: "Instagram" },
+    { id: "3", platform: "Facebook", url: "https://facebook.com/brandmappers", icon: "Facebook" },
+    { id: "4", platform: "Twitter", url: "https://twitter.com/brandmappers", icon: "Twitter" },
+  ],
+};
+
 export const FooterEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState<FooterContent>(defaultContent);
 
-  const [companyDescription, setCompanyDescription] = useState(
-    "Brand Mappers is a leading BTL advertising agency transforming brands through exceptional events, exhibitions, and creative design solutions."
-  );
-  const [address, setAddress] = useState("123 Business Park, Dubai, UAE");
-  const [phone, setPhone] = useState("+971 4 123 4567");
-  const [email, setEmail] = useState("info@brandmappers.com");
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .eq("key", "footer_content")
+          .single();
 
-  const [quickLinks, setQuickLinks] = useState<FooterLink[]>([
-    { id: "1", name: "Home", href: "/" },
-    { id: "2", name: "About", href: "#about" },
-    { id: "3", name: "Services", href: "#services" },
-    { id: "4", name: "Portfolio", href: "#portfolio" },
-    { id: "5", name: "Careers", href: "/careers" },
-  ]);
+        if (error && error.code !== "PGRST116") throw error;
 
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
-    { id: "1", platform: "Facebook", url: "https://facebook.com", icon: "Facebook" },
-    { id: "2", platform: "Instagram", url: "https://instagram.com", icon: "Instagram" },
-    { id: "3", platform: "LinkedIn", url: "https://linkedin.com", icon: "Linkedin" },
-    { id: "4", platform: "Twitter", url: "https://twitter.com", icon: "Twitter" },
-  ]);
+        if (data?.value) {
+          setContent(data.value as unknown as FooterContent);
+        }
+      } catch (err) {
+        console.error("Error fetching footer data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "Footer saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key: "footer_content", value: JSON.parse(JSON.stringify(content)) }, { onConflict: "key" });
+
+      if (error) throw error;
+
+      toast({
+        title: "Footer saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addQuickLink = () => {
-    setQuickLinks([...quickLinks, { id: Date.now().toString(), name: "", href: "" }]);
+    setContent({
+      ...content,
+      quickLinks: [...content.quickLinks, { id: Date.now().toString(), name: "", href: "" }],
+    });
   };
 
   const addSocialLink = () => {
-    setSocialLinks([...socialLinks, { id: Date.now().toString(), platform: "", url: "", icon: "" }]);
+    setContent({
+      ...content,
+      socialLinks: [...content.socialLinks, { id: Date.now().toString(), platform: "", url: "", icon: "" }],
+    });
   };
 
   const updateQuickLink = (id: string, field: keyof FooterLink, value: string) => {
-    setQuickLinks(quickLinks.map((l) => (l.id === id ? { ...l, [field]: value } : l)));
+    setContent({
+      ...content,
+      quickLinks: content.quickLinks.map((l) => (l.id === id ? { ...l, [field]: value } : l)),
+    });
   };
 
   const updateSocialLink = (id: string, field: keyof SocialLink, value: string) => {
-    setSocialLinks(socialLinks.map((l) => (l.id === id ? { ...l, [field]: value } : l)));
+    setContent({
+      ...content,
+      socialLinks: content.socialLinks.map((l) => (l.id === id ? { ...l, [field]: value } : l)),
+    });
   };
 
   const removeQuickLink = (id: string) => {
-    setQuickLinks(quickLinks.filter((l) => l.id !== id));
+    setContent({
+      ...content,
+      quickLinks: content.quickLinks.filter((l) => l.id !== id),
+    });
   };
 
   const removeSocialLink = (id: string) => {
-    setSocialLinks(socialLinks.filter((l) => l.id !== id));
+    setContent({
+      ...content,
+      socialLinks: content.socialLinks.filter((l) => l.id !== id),
+    });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -116,23 +197,32 @@ export const FooterEditor = () => {
           <div className="space-y-2">
             <Label>Company Description</Label>
             <Textarea
-              value={companyDescription}
-              onChange={(e) => setCompanyDescription(e.target.value)}
+              value={content.companyDescription}
+              onChange={(e) => setContent({ ...content, companyDescription: e.target.value })}
               rows={3}
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input
+                value={content.contact.phone}
+                onChange={(e) => setContent({ ...content, contact: { ...content.contact, phone: e.target.value } })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                value={content.contact.email}
+                onChange={(e) => setContent({ ...content, contact: { ...content.contact, email: e.target.value } })}
+              />
             </div>
             <div className="space-y-2">
               <Label>Address</Label>
-              <Input value={address} onChange={(e) => setAddress(e.target.value)} />
+              <Input
+                value={content.contact.address}
+                onChange={(e) => setContent({ ...content, contact: { ...content.contact, address: e.target.value } })}
+              />
             </div>
           </div>
         </CardContent>
@@ -153,7 +243,7 @@ export const FooterEditor = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {quickLinks.map((link) => (
+            {content.quickLinks.map((link) => (
               <div key={link.id} className="flex items-center gap-3">
                 <Input
                   value={link.name}
@@ -196,7 +286,7 @@ export const FooterEditor = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {socialLinks.map((link) => (
+            {content.socialLinks.map((link) => (
               <div key={link.id} className="flex items-center gap-3">
                 <Input
                   value={link.platform}

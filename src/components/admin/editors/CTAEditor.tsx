@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,27 +12,84 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface CTAContent {
+  headline: string;
+  description: string;
+  primaryButton: string;
+  secondaryButton: string;
+}
+
+const defaultContent: CTAContent = {
+  headline: "Ready to Transform Your Brand?",
+  description: "Let's create something extraordinary together. Get in touch with our team to discuss your next project.",
+  primaryButton: "Get Started",
+  secondaryButton: "Schedule a Call",
+};
 
 export const CTAEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [content, setContent] = useState<CTAContent>(defaultContent);
 
-  const [headline, setHeadline] = useState("Ready to Transform Your Brand?");
-  const [description, setDescription] = useState(
-    "Let's create something extraordinary together. Get in touch with our team to discuss your next project."
-  );
-  const [primaryButton, setPrimaryButton] = useState("Get Started");
-  const [secondaryButton, setSecondaryButton] = useState("Schedule a Call");
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .eq("key", "cta_content")
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        if (data?.value) {
+          setContent(data.value as unknown as CTAContent);
+        }
+      } catch (err) {
+        console.error("Error fetching CTA data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "CTA section saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key: "cta_content", value: JSON.parse(JSON.stringify(content)) }, { onConflict: "key" });
+
+      if (error) throw error;
+
+      toast({
+        title: "CTA section saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -65,16 +122,16 @@ export const CTAEditor = () => {
             <Label htmlFor="headline">Headline</Label>
             <Input
               id="headline"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
+              value={content.headline}
+              onChange={(e) => setContent({ ...content, headline: e.target.value })}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={content.description}
+              onChange={(e) => setContent({ ...content, description: e.target.value })}
               rows={3}
             />
           </div>
@@ -83,16 +140,16 @@ export const CTAEditor = () => {
               <Label htmlFor="primaryButton">Primary Button</Label>
               <Input
                 id="primaryButton"
-                value={primaryButton}
-                onChange={(e) => setPrimaryButton(e.target.value)}
+                value={content.primaryButton}
+                onChange={(e) => setContent({ ...content, primaryButton: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="secondaryButton">Secondary Button</Label>
               <Input
                 id="secondaryButton"
-                value={secondaryButton}
-                onChange={(e) => setSecondaryButton(e.target.value)}
+                value={content.secondaryButton}
+                onChange={(e) => setContent({ ...content, secondaryButton: e.target.value })}
               />
             </div>
           </div>

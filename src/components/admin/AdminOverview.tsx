@@ -16,6 +16,7 @@ import {
   Palette,
   Navigation,
   Phone,
+  Search,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -89,6 +90,13 @@ const sections = [
     icon: Palette,
     path: "/admin/theme",
     color: "text-violet-500",
+  },
+  {
+    title: "SEO Settings",
+    description: "Manage search engine optimization and meta tags",
+    icon: Search,
+    path: "/admin/seo",
+    color: "text-emerald-500",
   },
 ];
 

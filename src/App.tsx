@@ -22,6 +22,7 @@ import { CTAEditor } from "@/components/admin/editors/CTAEditor";
 import { NavigationEditor } from "@/components/admin/editors/NavigationEditor";
 import { FooterEditor } from "@/components/admin/editors/FooterEditor";
 import { ThemeEditor } from "@/components/admin/editors/ThemeEditor";
+import { SEOEditor } from "@/components/admin/editors/SEOEditor";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="navigation" element={<NavigationEditor />} />
               <Route path="footer" element={<FooterEditor />} />
               <Route path="theme" element={<ThemeEditor />} />
+              <Route path="seo" element={<SEOEditor />} />
             </Route>
             
             <Route path="*" element={<NotFound />} />

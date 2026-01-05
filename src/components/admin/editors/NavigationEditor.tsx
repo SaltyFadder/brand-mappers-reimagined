@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Save, GripVertical } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NavItem {
   id: string;
@@ -20,28 +21,69 @@ interface NavItem {
   enabled: boolean;
 }
 
+const defaultItems: NavItem[] = [
+  { id: "1", name: "Home", href: "#home", enabled: true },
+  { id: "2", name: "About", href: "#about", enabled: true },
+  { id: "3", name: "Services", href: "#services", enabled: true },
+  { id: "4", name: "Portfolio", href: "#portfolio", enabled: true },
+  { id: "5", name: "News", href: "#news", enabled: true },
+  { id: "6", name: "Careers", href: "/careers", enabled: true },
+  { id: "7", name: "Contact", href: "#contact", enabled: true },
+];
+
 export const NavigationEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<NavItem[]>(defaultItems);
 
-  const [items, setItems] = useState<NavItem[]>([
-    { id: "1", name: "Home", href: "#home", enabled: true },
-    { id: "2", name: "About", href: "#about", enabled: true },
-    { id: "3", name: "Services", href: "#services", enabled: true },
-    { id: "4", name: "Portfolio", href: "#portfolio", enabled: true },
-    { id: "5", name: "News", href: "#news", enabled: true },
-    { id: "6", name: "Careers", href: "/careers", enabled: true },
-    { id: "7", name: "Contact", href: "#contact", enabled: true },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .eq("key", "navigation_items")
+          .single();
+
+        if (error && error.code !== "PGRST116") throw error;
+
+        if (data?.value) {
+          setItems(data.value as unknown as NavItem[]);
+        }
+      } catch (err) {
+        console.error("Error fetching navigation data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast({
-      title: "Navigation saved",
-      description: "Your changes have been published.",
-    });
+    try {
+      const { error } = await supabase
+        .from("site_settings")
+        .upsert({ key: "navigation_items", value: JSON.parse(JSON.stringify(items)) }, { onConflict: "key" });
+
+      if (error) throw error;
+
+      toast({
+        title: "Navigation saved",
+        description: "Your changes have been published.",
+      });
+    } catch (error) {
+      console.error("Error saving:", error);
+      toast({
+        title: "Error saving",
+        description: "Failed to save changes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const addItem = () => {
@@ -58,6 +100,14 @@ export const NavigationEditor = () => {
   const removeItem = (id: string) => {
     setItems(items.filter((item) => item.id !== id));
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">

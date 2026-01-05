@@ -88,19 +88,17 @@ export const HeroEditor = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Update hero_content
+      // Upsert hero_content
       const { error: contentError } = await supabase
         .from("site_settings")
-        .update({ value: JSON.parse(JSON.stringify(content)), updated_at: new Date().toISOString() })
-        .eq("key", "hero_content");
+        .upsert({ key: "hero_content", value: JSON.parse(JSON.stringify(content)), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
       if (contentError) throw contentError;
 
-      // Update hero_stats
+      // Upsert hero_stats
       const { error: statsError } = await supabase
         .from("site_settings")
-        .update({ value: JSON.parse(JSON.stringify(stats)), updated_at: new Date().toISOString() })
-        .eq("key", "hero_stats");
+        .upsert({ key: "hero_stats", value: JSON.parse(JSON.stringify(stats)), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
       if (statsError) throw statsError;
 
