@@ -32,10 +32,18 @@ interface PortfolioItem {
 const categories = ["All", "Exhibitions", "Printing", "Stands", "Activations"];
 
 const defaultItems: PortfolioItem[] = [
-  { id: "1", title: "Tech Conference 2024", category: "Exhibitions", image: "", size: "large" },
-  { id: "2", title: "Product Launch Event", category: "Activations", image: "", size: "medium" },
-  { id: "3", title: "Corporate Branding", category: "Printing", image: "", size: "small" },
-  { id: "4", title: "Trade Show Booth", category: "Stands", image: "", size: "medium" },
+  { id: "1", title: "Giza Systems Smart Guide", category: "Exhibitions", image: "/src/assets/portfolio/portfolio-1.jpg", size: "large" },
+  { id: "2", title: "Papa Johns Branding", category: "Printing", image: "/src/assets/portfolio/portfolio-2.jpg", size: "small" },
+  { id: "3", title: "Glemgas Italy Campaign", category: "Printing", image: "/src/assets/portfolio/portfolio-3.jpg", size: "small" },
+  { id: "4", title: "Fashion Optics Display", category: "Stands", image: "/src/assets/portfolio/portfolio-4.jpg", size: "medium" },
+  { id: "5", title: "Renault Exhibition Stand", category: "Exhibitions", image: "/src/assets/portfolio/portfolio-5.jpg", size: "small" },
+  { id: "6", title: "Heritage College Event", category: "Activations", image: "/src/assets/portfolio/portfolio-6.jpg", size: "medium" },
+  { id: "7", title: "Cisco Partnership Display", category: "Stands", image: "/src/assets/portfolio/portfolio-7.jpg", size: "small" },
+  { id: "8", title: "Valentine's Campaign", category: "Activations", image: "/src/assets/portfolio/portfolio-8.jpg", size: "small" },
+  { id: "9", title: "Real Repair Product Launch", category: "Printing", image: "/src/assets/portfolio/portfolio-9.jpg", size: "medium" },
+  { id: "10", title: "Telefunken Tablet Campaign", category: "Activations", image: "/src/assets/portfolio/portfolio-10.jpg", size: "small" },
+  { id: "11", title: "Smart Payment Solutions", category: "Exhibitions", image: "/src/assets/portfolio/portfolio-11.jpg", size: "small" },
+  { id: "12", title: "Rekaz Developments Launch", category: "Activations", image: "/src/assets/portfolio/portfolio-12.jpg", size: "large" },
 ];
 
 export const PortfolioEditor = () => {
