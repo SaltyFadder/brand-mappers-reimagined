@@ -16,7 +16,6 @@ import { supabase } from "@/integrations/supabase/client";
 interface AdminUser {
   id: string;
   user_id: string;
-  email: string;
   created_at: string;
 }
 
@@ -26,9 +25,13 @@ export const AdminUsersEditor = () => {
   const [adding, setAdding] = useState(false);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [newEmail, setNewEmail] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const fetchAdmins = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id || null);
+
       const { data, error } = await supabase
         .from("user_roles")
         .select("id, user_id, created_at")
@@ -36,16 +39,7 @@ export const AdminUsersEditor = () => {
 
       if (error) throw error;
 
-      // We need to get emails for each admin - for now we'll show user_id
-      // In a real app, you'd join with a profiles table
-      const adminList: AdminUser[] = (data || []).map((item) => ({
-        id: item.id,
-        user_id: item.user_id,
-        email: "", // Will be populated if we have a profiles table
-        created_at: item.created_at,
-      }));
-
-      setAdmins(adminList);
+      setAdmins(data || []);
     } catch (err) {
       console.error("Error fetching admins:", err);
       toast({
@@ -74,12 +68,11 @@ export const AdminUsersEditor = () => {
 
     setAdding(true);
     try {
-      // First, we need to find the user by email
-      // This requires the user to already have signed up
-      const { data: userData, error: userError } = await supabase
-        .rpc("get_user_by_email", { email_input: newEmail.trim() });
+      // Use the RPC function to get user ID by email
+      const { data: userId, error: rpcError } = await supabase
+        .rpc("get_user_by_email" as any, { email_input: newEmail.trim() });
 
-      if (userError || !userData) {
+      if (rpcError || !userId) {
         toast({
           title: "User not found",
           description: "This email is not registered. The user must sign up first.",
@@ -92,7 +85,7 @@ export const AdminUsersEditor = () => {
       // Add admin role
       const { error } = await supabase
         .from("user_roles")
-        .insert({ user_id: userData, role: "admin" });
+        .insert([{ user_id: userId as string, role: "admin" as const }]);
 
       if (error) {
         if (error.code === "23505") {
@@ -125,10 +118,7 @@ export const AdminUsersEditor = () => {
   };
 
   const removeAdmin = async (id: string, userId: string) => {
-    // Get current user to prevent self-removal
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user?.id === userId) {
+    if (currentUserId === userId) {
       toast({
         title: "Cannot remove yourself",
         description: "You cannot remove your own admin access.",
@@ -222,7 +212,7 @@ export const AdminUsersEditor = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Current Admins
+            Current Admins ({admins.length})
           </CardTitle>
           <CardDescription>
             Users with admin access to this dashboard
@@ -232,7 +222,7 @@ export const AdminUsersEditor = () => {
           <div className="space-y-3">
             {admins.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No admins found. This shouldn't happen!
+                No admins found.
               </p>
             ) : (
               admins.map((admin) => (
@@ -246,21 +236,32 @@ export const AdminUsersEditor = () => {
                     </div>
                     <div>
                       <p className="font-medium text-foreground">
-                        {admin.email || `User ID: ${admin.user_id.slice(0, 8)}...`}
+                        {admin.user_id === currentUserId ? (
+                          <span className="flex items-center gap-2">
+                            You <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">Current</span>
+                          </span>
+                        ) : (
+                          `Admin User`
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        ID: {admin.user_id.slice(0, 8)}...
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Added: {new Date(admin.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeAdmin(admin.id, admin.user_id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {admin.user_id !== currentUserId && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeAdmin(admin.id, admin.user_id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               ))
             )}
@@ -272,9 +273,9 @@ export const AdminUsersEditor = () => {
       <Card className="border-primary/30 bg-primary/5">
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Note:</strong> The primary admin
-            (sherifeldidy@gmail.com) is automatically assigned on signup and cannot
-            be removed through this interface.
+            <strong className="text-foreground">Note:</strong> To add a new admin,
+            they must first create an account by signing up. Then enter their email
+            address above to grant them admin access.
           </p>
         </CardContent>
       </Card>
