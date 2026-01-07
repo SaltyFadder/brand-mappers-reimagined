@@ -1,12 +1,54 @@
+import { useState, useEffect } from "react";
 import { Facebook, Instagram, Linkedin, Twitter, MapPin, Phone, Mail } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const quickLinks = [
-  { name: "About Us", href: "#about" },
-  { name: "Services", href: "#services" },
-  { name: "Portfolio", href: "#portfolio" },
-  { name: "News", href: "#news" },
-  { name: "Contact", href: "#contact" },
-];
+interface SocialLink {
+  id: string;
+  platform: string;
+  url: string;
+  icon: string;
+}
+
+interface FooterLink {
+  id: string;
+  name: string;
+  href: string;
+}
+
+interface ContactInfo {
+  phone: string;
+  email: string;
+  address: string;
+}
+
+interface FooterContent {
+  companyDescription: string;
+  contact: ContactInfo;
+  quickLinks: FooterLink[];
+  socialLinks: SocialLink[];
+}
+
+const defaultContent: FooterContent = {
+  companyDescription: "Your one-stop BTL advertising partner since 2016. Creating impactful brand experiences across Egypt, Gulf, Africa, and the Americas.",
+  contact: {
+    phone: "+20 100 332 3458",
+    email: "info@brand-mappers.com",
+    address: "Cairo, Egypt\nDubai, UAE",
+  },
+  quickLinks: [
+    { id: "1", name: "About Us", href: "#about" },
+    { id: "2", name: "Services", href: "#services" },
+    { id: "3", name: "Portfolio", href: "#portfolio" },
+    { id: "4", name: "News", href: "#news" },
+    { id: "5", name: "Contact", href: "#contact" },
+  ],
+  socialLinks: [
+    { id: "1", platform: "LinkedIn", url: "https://linkedin.com/company/brand-mappers", icon: "Linkedin" },
+    { id: "2", platform: "Instagram", url: "https://instagram.com/brandmappers", icon: "Instagram" },
+    { id: "3", platform: "Facebook", url: "https://facebook.com/brandmappers", icon: "Facebook" },
+    { id: "4", platform: "Twitter", url: "https://twitter.com/brandmappers", icon: "Twitter" },
+  ],
+};
 
 const services = [
   "Shop Design",
@@ -16,14 +58,38 @@ const services = [
   "Booth Creation",
 ];
 
-const socialLinks = [
-  { icon: Linkedin, href: "https://linkedin.com/company/brand-mappers", label: "LinkedIn" },
-  { icon: Instagram, href: "https://instagram.com/brandmappers", label: "Instagram" },
-  { icon: Facebook, href: "https://facebook.com/brandmappers", label: "Facebook" },
-  { icon: Twitter, href: "https://twitter.com/brandmappers", label: "Twitter" },
-];
+const iconMap: Record<string, React.ElementType> = {
+  Linkedin,
+  Instagram,
+  Facebook,
+  Twitter,
+};
 
 const Footer = () => {
+  const [content, setContent] = useState<FooterContent>(defaultContent);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "footer_content")
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.value) {
+          setContent(data.value as unknown as FooterContent);
+        }
+      } catch (err) {
+        console.error("Error fetching footer data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <footer className="bg-brand-dark text-brand-light">
       {/* Main Footer */}
@@ -38,23 +104,24 @@ const Footer = () => {
                 </span>
               </a>
               <p className="text-brand-light/60 leading-relaxed mb-6">
-                Your one-stop BTL advertising partner since 2016. Creating
-                impactful brand experiences across Egypt, Gulf, Africa, and the
-                Americas.
+                {content.companyDescription}
               </p>
               <div className="flex gap-4">
-                {socialLinks.map((social) => (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={social.label}
-                    className="w-10 h-10 rounded-full bg-brand-light/10 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-300"
-                  >
-                    <social.icon className="w-5 h-5" />
-                  </a>
-                ))}
+                {content.socialLinks.map((social) => {
+                  const IconComponent = iconMap[social.icon] || Linkedin;
+                  return (
+                    <a
+                      key={social.id}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={social.platform}
+                      className="w-10 h-10 rounded-full bg-brand-light/10 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                    >
+                      <IconComponent className="w-5 h-5" />
+                    </a>
+                  );
+                })}
               </div>
             </div>
 
@@ -64,8 +131,8 @@ const Footer = () => {
                 Quick Links
               </h4>
               <ul className="space-y-3">
-                {quickLinks.map((link) => (
-                  <li key={link.name}>
+                {content.quickLinks.map((link) => (
+                  <li key={link.id}>
                     <a
                       href={link.href}
                       className="text-brand-light/60 hover:text-primary transition-colors duration-300"
@@ -100,27 +167,25 @@ const Footer = () => {
                 <li className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   <a
-                    href="tel:+201003323458"
+                    href={`tel:${content.contact.phone.replace(/\s/g, "")}`}
                     className="text-brand-light/60 hover:text-primary transition-colors"
                   >
-                    +20 100 332 3458
+                    {content.contact.phone}
                   </a>
                 </li>
                 <li className="flex items-start gap-3">
                   <Mail className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                   <a
-                    href="mailto:info@brand-mappers.com"
+                    href={`mailto:${content.contact.email}`}
                     className="text-brand-light/60 hover:text-primary transition-colors"
                   >
-                    info@brand-mappers.com
+                    {content.contact.email}
                   </a>
                 </li>
                 <li className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-brand-light/60">
-                    Cairo, Egypt
-                    <br />
-                    Dubai, UAE
+                  <span className="text-brand-light/60 whitespace-pre-line">
+                    {content.contact.address}
                   </span>
                 </li>
               </ul>

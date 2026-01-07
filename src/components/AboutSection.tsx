@@ -1,12 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import { Globe, Users, Award, Briefcase } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const stats = [
-  { icon: Briefcase, value: 5000, suffix: "+", label: "Projects Completed" },
-  { icon: Award, value: 8, suffix: "+", label: "Years in Business" },
-  { icon: Globe, value: 15, suffix: "+", label: "Countries Served" },
-  { icon: Users, value: 50, suffix: "+", label: "Team Members" },
+interface AboutStat {
+  icon: string;
+  value: number;
+  suffix: string;
+  label: string;
+}
+
+interface AboutContent {
+  title: string;
+  subtitle: string;
+  description: string;
+  secondaryDescription: string;
+}
+
+const defaultContent: AboutContent = {
+  title: "About Us",
+  subtitle: "Crafting Brand Experiences",
+  description: "Since 2016, Brand Mappers has been at the forefront of BTL advertising, transforming how brands connect with their audiences. We specialize in creating immersive experiences that leave lasting impressions.",
+  secondaryDescription: "From Egypt to the Gulf, across Africa to the Americas and Canada, we've helped brands grow bigger every day through exceptional events, stunning exhibitions, and innovative design solutions.",
+};
+
+const defaultStats: AboutStat[] = [
+  { icon: "Briefcase", value: 5000, suffix: "+", label: "Projects Completed" },
+  { icon: "Award", value: 8, suffix: "+", label: "Years in Business" },
+  { icon: "Globe", value: 15, suffix: "+", label: "Countries Served" },
+  { icon: "Users", value: 50, suffix: "+", label: "Team Members" },
 ];
+
+const iconMap: Record<string, React.ElementType> = {
+  Briefcase,
+  Award,
+  Globe,
+  Users,
+};
 
 const AnimatedCounter = ({
   target,
@@ -50,6 +79,36 @@ const AnimatedCounter = ({
 const AboutSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [content, setContent] = useState<AboutContent>(defaultContent);
+  const [stats, setStats] = useState<AboutStat[]>(defaultStats);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("key, value")
+          .in("key", ["about_content", "about_stats"]);
+
+        if (error) throw error;
+
+        if (data) {
+          data.forEach((item) => {
+            if (item.key === "about_content" && item.value) {
+              setContent(item.value as unknown as AboutContent);
+            }
+            if (item.key === "about_stats" && item.value) {
+              setStats(item.value as unknown as AboutStat[]);
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching about data:", err);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -80,23 +139,18 @@ const AboutSection = () => {
           {/* Left Content */}
           <div>
             <span className="text-primary font-semibold text-sm tracking-wider uppercase mb-4 block">
-              About Us
+              {content.title}
             </span>
             <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
-              Crafting Brand
+              {content.subtitle.split(" ").slice(0, -1).join(" ")}
               <br />
-              <span className="text-gradient">Experiences</span>
+              <span className="text-gradient">{content.subtitle.split(" ").slice(-1)}</span>
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              Since 2016, Brand Mappers has been at the forefront of BTL
-              advertising, transforming how brands connect with their audiences.
-              We specialize in creating immersive experiences that leave lasting
-              impressions.
+              {content.description}
             </p>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              From Egypt to the Gulf, across Africa to the Americas and Canada,
-              we've helped brands grow bigger every day through exceptional
-              events, stunning exhibitions, and innovative design solutions.
+              {content.secondaryDescription}
             </p>
           </div>
 
@@ -141,24 +195,27 @@ const AboutSection = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className="bg-background rounded-2xl p-8 text-center card-hover group"
-            >
-              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
-                <stat.icon className="w-7 h-7 text-primary" />
+          {stats.map((stat, index) => {
+            const IconComponent = iconMap[stat.icon] || Briefcase;
+            return (
+              <div
+                key={index}
+                className="bg-background rounded-2xl p-8 text-center card-hover group"
+              >
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
+                  <IconComponent className="w-7 h-7 text-primary" />
+                </div>
+                <div className="font-display text-4xl md:text-5xl font-bold text-foreground mb-2">
+                  <AnimatedCounter
+                    target={stat.value}
+                    suffix={stat.suffix}
+                    isVisible={isVisible}
+                  />
+                </div>
+                <p className="text-muted-foreground font-medium">{stat.label}</p>
               </div>
-              <div className="font-display text-4xl md:text-5xl font-bold text-foreground mb-2">
-                <AnimatedCounter
-                  target={stat.value}
-                  suffix={stat.suffix}
-                  isVisible={isVisible}
-                />
-              </div>
-              <p className="text-muted-foreground font-medium">{stat.label}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
