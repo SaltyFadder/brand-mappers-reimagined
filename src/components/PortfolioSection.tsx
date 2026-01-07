@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ExternalLink, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 import portfolio1 from "@/assets/portfolio/portfolio-1.jpg";
 import portfolio2 from "@/assets/portfolio/portfolio-2.jpg";
@@ -14,97 +15,81 @@ import portfolio10 from "@/assets/portfolio/portfolio-10.jpg";
 import portfolio11 from "@/assets/portfolio/portfolio-11.jpg";
 import portfolio12 from "@/assets/portfolio/portfolio-12.jpg";
 
+interface PortfolioItem {
+  id: string;
+  title: string;
+  category: string;
+  image: string;
+  size: "small" | "medium" | "large";
+}
+
 const categories = ["All", "Exhibitions", "Printing", "Stands", "Activations"];
 
-const portfolioItems = [
-  {
-    id: 1,
-    title: "Giza Systems Smart Guide",
-    category: "Exhibitions",
-    image: portfolio1,
-    size: "large",
-  },
-  {
-    id: 2,
-    title: "Papa Johns Branding",
-    category: "Printing",
-    image: portfolio2,
-    size: "small",
-  },
-  {
-    id: 3,
-    title: "Glemgas Italy Campaign",
-    category: "Printing",
-    image: portfolio3,
-    size: "small",
-  },
-  {
-    id: 4,
-    title: "Fashion Optics Display",
-    category: "Stands",
-    image: portfolio4,
-    size: "medium",
-  },
-  {
-    id: 5,
-    title: "Renault Exhibition Stand",
-    category: "Exhibitions",
-    image: portfolio5,
-    size: "small",
-  },
-  {
-    id: 6,
-    title: "Heritage College Event",
-    category: "Activations",
-    image: portfolio6,
-    size: "medium",
-  },
-  {
-    id: 7,
-    title: "Cisco Partnership Display",
-    category: "Stands",
-    image: portfolio7,
-    size: "small",
-  },
-  {
-    id: 8,
-    title: "Valentine's Campaign",
-    category: "Activations",
-    image: portfolio8,
-    size: "small",
-  },
-  {
-    id: 9,
-    title: "Real Repair Product Launch",
-    category: "Printing",
-    image: portfolio9,
-    size: "medium",
-  },
-  {
-    id: 10,
-    title: "Telefunken Tablet Campaign",
-    category: "Activations",
-    image: portfolio10,
-    size: "small",
-  },
-  {
-    id: 11,
-    title: "Smart Payment Solutions",
-    category: "Exhibitions",
-    image: portfolio11,
-    size: "small",
-  },
-  {
-    id: 12,
-    title: "Rekaz Developments Launch",
-    category: "Activations",
-    image: portfolio12,
-    size: "large",
-  },
+// Map old static paths to imported images for fallback
+const imageMap: Record<string, string> = {
+  "/src/assets/portfolio/portfolio-1.jpg": portfolio1,
+  "/src/assets/portfolio/portfolio-2.jpg": portfolio2,
+  "/src/assets/portfolio/portfolio-3.jpg": portfolio3,
+  "/src/assets/portfolio/portfolio-4.jpg": portfolio4,
+  "/src/assets/portfolio/portfolio-5.jpg": portfolio5,
+  "/src/assets/portfolio/portfolio-6.jpg": portfolio6,
+  "/src/assets/portfolio/portfolio-7.jpg": portfolio7,
+  "/src/assets/portfolio/portfolio-8.jpg": portfolio8,
+  "/src/assets/portfolio/portfolio-9.jpg": portfolio9,
+  "/src/assets/portfolio/portfolio-10.jpg": portfolio10,
+  "/src/assets/portfolio/portfolio-11.jpg": portfolio11,
+  "/src/assets/portfolio/portfolio-12.jpg": portfolio12,
+};
+
+const defaultItems: PortfolioItem[] = [
+  { id: "1", title: "Giza Systems Smart Guide", category: "Exhibitions", image: portfolio1, size: "large" },
+  { id: "2", title: "Papa Johns Branding", category: "Printing", image: portfolio2, size: "small" },
+  { id: "3", title: "Glemgas Italy Campaign", category: "Printing", image: portfolio3, size: "small" },
+  { id: "4", title: "Fashion Optics Display", category: "Stands", image: portfolio4, size: "medium" },
+  { id: "5", title: "Renault Exhibition Stand", category: "Exhibitions", image: portfolio5, size: "small" },
+  { id: "6", title: "Heritage College Event", category: "Activations", image: portfolio6, size: "medium" },
+  { id: "7", title: "Cisco Partnership Display", category: "Stands", image: portfolio7, size: "small" },
+  { id: "8", title: "Valentine's Campaign", category: "Activations", image: portfolio8, size: "small" },
+  { id: "9", title: "Real Repair Product Launch", category: "Printing", image: portfolio9, size: "medium" },
+  { id: "10", title: "Telefunken Tablet Campaign", category: "Activations", image: portfolio10, size: "small" },
+  { id: "11", title: "Smart Payment Solutions", category: "Exhibitions", image: portfolio11, size: "small" },
+  { id: "12", title: "Rekaz Developments Launch", category: "Activations", image: portfolio12, size: "large" },
 ];
 
 const PortfolioSection = () => {
   const [activeCategory, setActiveCategory] = useState("All");
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>(defaultItems);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "portfolio_items")
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.value) {
+          const items = data.value as unknown as PortfolioItem[];
+          // Map old static paths to imported images
+          const mappedItems = items.map(item => ({
+            ...item,
+            image: imageMap[item.image] || item.image,
+          }));
+          setPortfolioItems(mappedItems);
+        }
+      } catch (err) {
+        console.error("Error fetching portfolio data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredItems =
     activeCategory === "All"
