@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Upload, Video } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
 interface HeroStat {
   value: string;
   label: string;
@@ -31,6 +30,8 @@ export const HeroEditor = () => {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   // Hero content state
   const [content, setContent] = useState<HeroContent>({
@@ -49,6 +50,9 @@ export const HeroEditor = () => {
     { value: "50+", label: "Team Members" },
   ]);
 
+  // Video URL state
+  const [videoUrl, setVideoUrl] = useState<string>("/hero-video.mp4");
+
   // Fetch existing data on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -56,7 +60,7 @@ export const HeroEditor = () => {
         const { data, error } = await supabase
           .from("site_settings")
           .select("key, value")
-          .in("key", ["hero_content", "hero_stats"]);
+          .in("key", ["hero_content", "hero_stats", "hero_video"]);
 
         if (error) throw error;
 
@@ -67,6 +71,12 @@ export const HeroEditor = () => {
             }
             if (item.key === "hero_stats" && item.value) {
               setStats(item.value as unknown as HeroStat[]);
+            }
+            if (item.key === "hero_video" && item.value) {
+              const videoData = item.value as { url?: string };
+              if (videoData.url) {
+                setVideoUrl(videoData.url);
+              }
             }
           });
         }
@@ -84,6 +94,78 @@ export const HeroEditor = () => {
 
     fetchData();
   }, [toast]);
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("video/")) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a video file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Video must be smaller than 50MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `hero-video-${Date.now()}.${fileExt}`;
+      const filePath = `videos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("site-assets")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("site-assets")
+        .getPublicUrl(filePath);
+
+      setVideoUrl(urlData.publicUrl);
+
+      // Save video URL to database
+      const { error: saveError } = await supabase
+        .from("site_settings")
+        .upsert(
+          { key: "hero_video", value: { url: urlData.publicUrl }, updated_at: new Date().toISOString() },
+          { onConflict: "key" }
+        );
+
+      if (saveError) throw saveError;
+
+      toast({
+        title: "Video uploaded",
+        description: "Hero video has been updated successfully.",
+      });
+    } catch (err) {
+      console.error("Error uploading video:", err);
+      toast({
+        title: "Upload failed",
+        description: "Could not upload video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      // Reset the input
+      if (videoInputRef.current) {
+        videoInputRef.current.value = "";
+      }
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -287,16 +369,52 @@ export const HeroEditor = () => {
         <CardHeader>
           <CardTitle>Video Background</CardTitle>
           <CardDescription>
-            Upload a new video for the hero background
+            Upload a new video for the hero background (max 50MB)
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <input
+            ref={videoInputRef}
+            type="file"
+            accept="video/*"
+            onChange={handleVideoUpload}
+            className="hidden"
+          />
           <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
-            <p className="text-muted-foreground">
-              Current video: hero-video.mp4
-            </p>
-            <Button variant="outline" className="mt-4">
-              Upload New Video
+            {videoUrl && (
+              <div className="mb-4">
+                <video
+                  src={videoUrl}
+                  className="w-full max-w-md mx-auto rounded-lg"
+                  controls
+                  muted
+                >
+                  <source src={videoUrl} type="video/mp4" />
+                </video>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-4">
+              <Video className="w-5 h-5" />
+              <span className="text-sm">
+                {videoUrl.includes("site-assets") ? "Custom video uploaded" : "Using default video"}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => videoInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload New Video
+                </>
+              )}
             </Button>
           </div>
         </CardContent>
