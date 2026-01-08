@@ -36,6 +36,7 @@ const HeroSection = () => {
   const [contactOpen, setContactOpen] = useState(false);
   const [content, setContent] = useState<HeroContent>(defaultContent);
   const [stats, setStats] = useState<HeroStat[]>(defaultStats);
+  const [videoUrl, setVideoUrl] = useState<string>("/hero-video.mp4");
 
   useEffect(() => {
     const fetchHeroData = async () => {
@@ -43,7 +44,7 @@ const HeroSection = () => {
         const { data, error } = await supabase
           .from("site_settings")
           .select("key, value")
-          .in("key", ["hero_content", "hero_stats"]);
+          .in("key", ["hero_content", "hero_stats", "hero_video"]);
 
         if (error) throw error;
 
@@ -54,6 +55,12 @@ const HeroSection = () => {
             }
             if (item.key === "hero_stats" && item.value) {
               setStats(item.value as unknown as HeroStat[]);
+            }
+            if (item.key === "hero_video" && item.value) {
+              const videoData = item.value as { url?: string };
+              if (videoData.url) {
+                setVideoUrl(videoData.url);
+              }
             }
           });
         }
@@ -84,13 +91,14 @@ const HeroSection = () => {
         {/* Video background */}
         <div className="absolute inset-0 bg-background">
           <video
+            key={videoUrl}
             autoPlay
             loop
             muted
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           >
-            <source src="/hero-video.mp4" type="video/mp4" />
+            <source src={videoUrl} type="video/mp4" />
           </video>
           {/* Dark overlay for better text readability */}
           <div className="absolute inset-0 bg-background/60" />
